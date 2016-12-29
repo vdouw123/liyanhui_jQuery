@@ -1,0 +1,511 @@
+﻿<!DOCTYPE html>
+<html><head>
+<meta charset=utf-8 />
+<title>知问前端</title>
+<script type="text/javascript" src="http://www.vdouw.com/GLOBAL/jquery.min.js"></script>
+<script src="http://www.vdouw.com/GLOBAL/jQueryUI/jquery-ui.min.js"></script>
+<link type="text/css" rel="stylesheet" href="http://www.vdouw.com/GLOBAL/jQueryUI/jquery-ui.min.css" />
+<script src="http://www.vdouw.com/GLOBAL/validate/jquery.validate.min.js"></script>
+<script src="http://www.vdouw.com/GLOBAL/form/jquery.form.min.js"></script>
+<script src="http://www.vdouw.com/GLOBAL/cookie/jquery.cookie.js"></script>
+<link rel="shortcut icon" type="image/x-icon" href="img/favicon.ico" />
+<style>
+body{margin:40px 0 0 0;	padding:0;font-size:12px;font-family:宋体;background:#fff;}
+input{ outline:none; margin:0; padding:0;}
+label{ margin:0; padding:0;}
+/*更改jQuery UI主题的对话框header的背景*/
+.ui-widget-header {background:url(img/ui_header_bg.png);}
+/*按钮正常状态的背景*/
+.ui-state-default,.ui-widget-content .ui-state-default, .ui-widget-header .ui-state-default{background:url(img/ui_header_bg.png);}
+/*按钮点击状态的背景*/
+.ui-state-active, .ui-widget-content .ui-state-active, .ui-widget-header .ui-state-active {background:url(img/ui_white.png);}
+/*工具提示的文本颜色*/
+.ui-tooltip {color:#666;}
+/*邮箱自动补全的悬停背景色*/
+.ui-menu-item a.ui-state-focus {background:url(img/ui_header_bg.png);}
+.ui-menu-item a {color:#666;}
+/*日历UI的今天单元格样式*/
+.ui-datepicker-today .ui-state-highlight {	border:1px solid #eee;	color:#f60;}
+/*日历UI的选定单元格样式*/
+.ui-datepicker-current-day .ui-state-active {border:1px solid #eee;	color:#06f;}
+#header {width:100%;height:40px;background:url(img/header_bg.png);position:absolute;	top:0;}
+#header .header_main {width:800px;height:40px;margin:0 auto;}
+#header .header_main h1 {font-size:20px;margin:0;padding:0;	color:#666;	height:40px;line-height:40px;padding:0 10px;float:left;}
+#header .header_search {padding:6px 0 0 0;float:left;} 
+#header .header_search .search {width:300px;height:24px;border:1px solid #ccc;	background:#fff;color:#666;	font-size:14px;	text-indent:5px;}
+#header .header_button {padding:5px;float:left;}
+#header .header_member {float:right;height:40px;line-height:40px;color:#555;font-size:14px;}
+#header .header_member a {text-decoration:none;color:#555;font-size:14px;}
+#reg, #login {padding:15px 0 0 15px;}
+#reg p,#login p {margin:10px 0;	padding:0;}
+#reg p label, #login p label {font-size:14px;color:#666;}
+#reg .star, #login .star {font-size:14px;	color:maroon; margin-left:3px;}
+#reg ol, #login ol{ margin:0; padding:0 0 0 20px; color:maroon;}
+#reg ol li, #login ol li{ height:20px;}
+#reg .text, #login .text {border-radius:4px;	border:1px solid #ccc;	background:#fff;width:200px;height:25px;line-height:25px;text-indent:5px;font-size:13px;color:#666;}
+.red{ color:red;}
+#reg .succ, #login .succ{display:inline-block;width:28px; background:url(img/reg_succ.png) no-repeat;}
+#expires{ margin:0 2px 0 125px; position:relative; top:2px;}
+#loading{ background:url(img/loading.gif) no-repeat 20px center; line-height:25px; font-size:14px; font-weight:bolder; color:#666; text-indent:40px;}
+
+#tabs{ margin:200px; border:none;}
+#tab1,#tab2,#tab3{ border:1px solid #aaa; border-top:none; position:relative; top:-2px;}
+</style>
+<script>
+$(function(){
+  $('#search_button').button({
+    icons:{
+	  primary:'ui-icon-search'
+	}
+  });
+  
+  /*
+  $.cookie('user','vdouw',{
+    expires:7,                 //过期时间设置成7天
+	//path:'/',                //设置路径
+	//domain:'www.vdouw.com',  //设置域名
+    //secure:true,             //默认为false，需要使用安全协议https
+  });
+  //alert($.cookie('user'));   //读取cookie数据
+  //alert($.cookie);           //读取所有cookie
+  */
+  $('#member, #logout').hide();
+  if($.cookie('user')){
+    $('#member, #logout').show();
+	$('#reg_a, #login_a').hide();
+	$('#member').html($.cookie('user'));
+  }else{
+    $('#member, #logout').hide();
+	$('#reg_a, #login_a').show();
+  }
+  $('#logout').click(function(){
+    $.removeCookie('user');
+	window.location.href="index.html";
+  });
+  
+    
+  $('#loading').dialog({
+    autoOpen:false,
+	modal:true,               //true表示其他区域能操作
+	closeOnEscape:false,      //esc无用
+	resizable:false,
+	draggable:false,
+	width:180,
+	height:50	
+  }).parent().parent().find('.ui-widget-header').hide();      //隐藏dialog的header
+	
+  $('#reg_a').click(function(){
+    $('#reg').dialog('open');      //为什么要一个OPEN呢～！？
+  });
+  
+  $('#reg').dialog({
+	autoOpen:false,
+	modal:true,     //后面的部分能否操作
+	width:320,
+	height:340,
+	resizable:false,    //大小拖动
+	buttons:{
+	  '提交':function(){
+	    $(this).submit();
+	  }
+    }
+  });
+  
+  $('#reg').buttonset();    //控制下面的性别，也就是jqueryUi的radio方法。
+  
+  $('#reg').validate({
+	submitHandler : function (form) {
+	  $(form).ajaxSubmit({
+	    url : 'add.php',
+	    type : 'POST',
+		beforeSubmit:function(formData,jqForm,options){     //提交了后，button就变成不可用了。
+		  $('#loading').dialog('open');
+		  $('#reg').dialog('widget').find('button').eq(1).button('disable');
+		},
+		success:function(responseText,statusText){
+	      if(responseText){             //注册成功后，启用button，恢复再注册
+			$('#reg').dialog('widget').find('button').eq(1).button('enable');
+			$('#loading').css('background','url(img/success.gif) no-repeat 20px center').html('数据新增成功');
+			$.cookie('user',$('#user').val());
+			setTimeout(function(){      //1秒钟后消失
+			  $('#loading').dialog('close');
+			  $('#reg').dialog('close');
+			  $('#reg').resetForm();
+			  $('#reg span.star').html('*').removeClass('succ');
+			  $('#loading').css('background','url(img/loading.gif) no-repeat 20px center').html('数据交互中~!');
+			  $('#member, #logout').show();
+	          $('#reg_a, #login_a').hide();
+	          $('#member').html($.cookie('user'));
+			},1000);
+		  }
+		}
+	  });
+	},
+	showErrors:function(){
+	  var errorCount=this.numberOfInvalids();
+	  if(errorCount>0){
+	    $('#reg').dialog('option','height',errorCount*20+340);
+	  }else{
+	    $('#reg').dialog('option','height',340)
+	  }
+	  this.defaultShowErrors();
+	},
+	highlight:function(element,errorClass){
+	  $(element).css('border','1px solid #630');
+	  $(element).parent().find('span').html('*').removeClass('succ');
+	},
+	unhighlight:function(element,errorClass){
+	  $(element).css('border','1px solid #ccc');
+	  $(element).parent().find('span').html('&nbsp;').addClass('succ');
+	},
+	errorLabelContainer:'ol.reg_error',
+	wrapper:'li',
+    rules:{
+	  user:{
+	    required:true,
+		minlength:2,
+		remote:{
+		  url:'is_user.php',
+		  type:'POST'
+		}
+	  },
+	  pass:{
+	    required:true,
+		minlength:6
+	  },
+	  email:{
+	    required:true,
+		email:true
+	  }
+	},
+	messages:{
+	  user:{
+	    required:'帐号不得为空',
+		minlength:'帐号不得小于{0}位',
+		remote:'帐号被占用'
+	  },
+	  pass:{
+	    required:'密码不得为空',
+		minlength:'密码不得小于{0}位'
+	  },
+	  email:{
+	    required:'邮件不得为空',
+		email:'请输入正确的邮件地址'
+	  }
+	}
+  });
+  
+  //$('#reg input[title]').tooltip();    //将title提示变成特效  
+  $('#user').tooltip({                   //这里只演示一个
+    position:{
+	  my:'left top+3',
+	  //at:'left top+3'                  //at是my的辅助
+	},
+	disabled:false,                      //是否禁用（在某种情况下再调出来）
+	//content:'改变title',
+	//tooltipClass:'red'                 //调用red的样式
+	show:'drop',                         //调整成false就是无弹出效果
+	hide:'slide',                        //具体效果查手册
+	//track:true                         //鼠标跟随
+  });
+  
+  /*
+  var host=['aa','aaaa','aaaaaaa','bb'];
+  $('#email').autocomplete({            //自动补全
+    source:host,                        //数据源
+	minLength:0,                        //激发字符数
+	delay:1000                          //激发延迟
+  });
+  */
+  
+  
+  $('#email').autocomplete({
+	delay:0,
+	autoFocus:true,
+    source:function(request,response){      //request请求  response呈现下拉自动补全的数据源 
+	  //alert(request.term);                //获取用户输入的值
+	  //response(['aa','aaaa','aaaaaa','bbb']);    //输入时提示全部数据源
+	  var hosts=['qq.com','163.com','sina.com.cn','126.com'],
+	      term=request.term,                        //获取用户输入的内容
+	      name=term,                                //邮箱的用户名
+	      host='',                                  //邮箱的域名
+	      ix=term.indexOf('@'),                     //@在输入值的位置，如果是-1，表示没有
+	      //alert(ix);
+	      result=[];                                //最终呈现的邮箱列表
+	  result.push(term);
+	  if(ix>-1){                 //当有@的时候，重新分配用户名和域名
+	    name=term.slice(0,ix);   //获取从0到ix的字符串，也就是@前面的值
+		host=term.slice(ix+1);   //获取出现@后，@以后的字符串
+	  };
+	  //alert(name);
+	  //alert(host);
+	  if(name){                  //如果name有值的情况下开始判断
+	    //如果用户已经输入@和后面的域名，那么就找到相关的域名提示，比如dd@1，就提示dd@163.com
+		//如果用户还没有输入@或后面的域名，那就么就把所有的域名都提示出来
+		var findedHosts = ( host ? $.grep(hosts,function(index,value){
+		  return index.indexOf(host) > -1
+		}) : hosts),
+		findedResult = $.map(findedHosts,function(index,value){
+		  return name + '@' + index;
+		});
+		result = result.concat(findedResult);
+	  }
+	  response(result);
+	}
+  });
+  
+  
+  $('#date').datepicker({
+    dateFormat : 'yy-mm-dd',      //指定日期的格式
+    dayNamesMin : ['日','一','二','三','四','五','六'],
+    monthNames : ['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'],
+    monthNamesShort : ['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'],
+	//altFiled:'#abc',           //为日期选择器指定一个<input>域
+    //altFormat : 'dd/mm/yy',
+	//appendText:'日历',          //在input后加了个<span>日历</span>
+	//showWeek:true,
+    firstDay : 1,                //更改每周的起始日，1为从周一开始
+	//disabled:true,             //禁用日历
+	//numberOfMonths:3,          //日历中同时显示的月份个数
+	//numberOfMonths:[3,2],      //显示3行，每行2个
+	//showOtherMonths:true,      //如果设置为true，当月中没有使用的单元，格会显示填充，但无法使用
+	//selectOtherMonths:true,    //如果设置为true，表示可以选择上个月或下个月的日期。前提是showOtherMonths设置为true
+	changeMonth : true,          //如果设置为true，显示快速选择月份的下拉列表
+    changeYear : true,           //如果设置为true，显示快速选择年份的下来列表
+	/*
+	showOn:'both',                   //默认值为focus，获取焦点触发
+	buttonText:'日历',                //触发按钮上显示的文本
+	buttonImage:'img/calendar.gif',  //图片按钮地址
+	buttonImageOnly:true,            //设置为true 则会使图片代替按钮
+	*/
+    showButtonPanel : true,          //下面多一个today和close
+    closeText : '关闭',
+    currentText : '回到今天',
+	prevText:'上个月',
+	nextText:'下个月',
+	//yearSuffix:'年',
+	showMonthAfterYear:true,         //这个有必要，把年放在前面
+	//minDate:10,                    //过去10天开始，可以设置负数，或都加y/m/d都可以
+    //maxDate:10,                    //未来10天开始，可以设置负数
+    hideIfNoPrevNext : true,         //没有月份就隐藏按钮
+    yearRange : '1050:2046',
+	defaultDate:0,                   //不选择日期的话，回车选择今天
+	//showAnim:false,                //设置成没有视觉效果，设置true会出错
+	showAnim:'blind',                //动画中的一种，更多参见手册
+	duration:1000,                   //显示或消失的持续时间
+	/*                               //日历显示之前被调用
+	beforeShow:function(){
+	  alert('日历显示之前被调用');
+	},
+	*/
+	/*                               //做一些判断用
+	beforeShowDay:function(date){
+	  if(date.getDate()==1){
+	    return[false,'a','不能选择1号'];
+	  }else{
+	    return[true];
+	  }
+	},
+	*/
+	/*
+	onChangeMonthYear:function(year,month,inst){
+	  alert(year);
+	  alert(month);
+	  alert(inst.id);
+	},
+	*/
+  
+  });
+  
+  
+  
+  $('#login_a').click(function(){
+    $('#login').dialog('open');
+  });
+
+
+  $('#login').dialog({
+	autoOpen:false,
+	modal:true,     //后面的部分能否操作
+	width:320,
+	height:240,
+	resizable:false,    //大小拖动
+	buttons:{
+	  '提交':function(){
+	    $(this).submit();
+	  }
+    }
+  });  
+  
+  $('#login').validate({
+	submitHandler : function (form) {
+	  $(form).ajaxSubmit({
+	    url : 'login.php',
+	    type : 'POST',
+		beforeSubmit:function(formData,jqForm,options){     //提交了后，button就变成不可用了。
+		  $('#loading').dialog('open');
+		  $('#login').dialog('widget').find('button').eq(1).button('disable');
+		},
+		success:function(responseText,statusText){
+	      if(responseText){             //注册成功后，启用button，恢复再注册
+			$('#login').dialog('widget').find('button').eq(1).button('enable');
+			$('#loading').css('background','url(img/success.gif) no-repeat 20px center').html('登录成功');
+			
+			if($('#expires').is(':checked')){
+			  $.cookie('user',$('#login_user').val(),{
+			    expires:7
+			  });
+			}else{
+			  $.cookie('user',$('#login_user').val());
+			}
+			
+			setTimeout(function(){      //1秒钟后消失
+			  $('#loading').dialog('close');
+			  $('#login').dialog('close');
+			  $('#login').resetForm();
+			  $('#login span.star').html('*').removeClass('succ');
+			  $('#loading').css('background','url(img/loading.gif) no-repeat 20px center').html('数据交互中~!');
+			  $('#member, #logout').show();
+	          $('#reg_a, #login_a').hide();
+	          $('#member').html($.cookie('user'));
+			},1000);
+		  }
+		}
+	  });
+	},
+	showErrors:function(){
+	  var errorCount=this.numberOfInvalids();
+	  if(errorCount>0){
+	    $('#login').dialog('option','height',errorCount*20+240);
+	  }else{
+	    $('#login').dialog('option','height',240)
+	  }
+	  this.defaultShowErrors();
+	},
+	highlight:function(element,errorClass){
+	  $(element).css('border','1px solid #630');
+	  $(element).parent().find('span').html('*').removeClass('succ');
+	},
+	unhighlight:function(element,errorClass){
+	  $(element).css('border','1px solid #ccc');
+	  $(element).parent().find('span').html('&nbsp;').addClass('succ');
+	},
+	errorLabelContainer:'ol.login_error',
+	wrapper:'li',
+    rules:{
+	  login_user:{
+	    required:true,
+		minlength:2,
+	  },
+	  login_pass:{
+	    required:true,
+		minlength:6,
+		remote:{
+		  url:'login.php',
+		  type:'POST',
+		  data:{
+			login_user:function(){
+			  return $('login_user').val();
+			}  
+		  }
+		}
+	  }
+	},
+	messages:{
+	  login_user:{
+	    required:'帐号不得为空',
+		minlength:'帐号不得小于{0}位',
+	  },
+	  login_pass:{
+	    required:'密码不得为空',
+		minlength:'密码不得小于{0}位'
+	  }
+	}
+  });
+  
+  $('#tabs').tabs({
+    //collapsible:true,      //当设置为true 是，允许选项卡折叠对应的内容
+	//disabled:[0,1],        //禁用第一个和第二个
+	//event:'mouseover',     //触发tab 的事件类型，默认为click
+	//active:1               //默认第几个展开
+	//active:false,          //默认是否折叠。条件必须是collapsible 值为true
+	//heightStyle:'content', //默认为content，即根据内容伸展高度
+	//heightStyle:'auto',    //Auto 则自动根据最高的那个为基准
+	//heightStyle:'fill',    //fill 则是填充一定的可用高度
+	show:'blind',            //切换选项卡时，默认采用淡入效果。
+	hide:'slide',            //切换选项卡时，默认采用淡出效果。
+	/*
+	create:function(event,ui){
+	  alert('创建TAB时触发');
+	  alert($(ui.tab.get()).html());
+      alert($(ui.panel.get()).html());
+	},
+	*/
+	/*
+	activate:function(event,ui){
+	  //alert('切换到另一个活动卡后触发，点进去才触发');
+	  //alert($(ui.oldTab.get()).html());
+      //alert($(ui.oldPanel.get()).html());
+      //alert($(ui.newTab.get()).html());
+      //alert($(ui.newPanel.get()).html());
+	},
+	*/
+	/*
+	beforeActivate:function(event,ui){
+	  //alert('切换到一个活动卡之前触发');
+	  //alert($(ui.oldTab.get()).html());
+      //alert($(ui.oldPanel.get()).html());
+      //alert($(ui.newTab.get()).html());
+      //alert($(ui.newPanel.get()).html());
+	},
+	*/
+  });
+  
+  
+});
+</script>
+</head>
+<body>
+<div id="header">
+  <div class="header_main">
+    <h1>知问</h1>
+    <div class="header_search"><input type="text" name="search" class="search" /></div>
+    <div class="header_button"><button id="search_button">查询</button></div>
+    <div class="header_member">
+      <a href="javascript:void(0)" id="reg_a">注册</a>
+      <a href="javascript:void(0)" id="member">用户</a>
+      <span> | </span>
+      <a href="javascript:void(0)" id="login_a">登录</a>
+      <a href="javascript:void(0)" id="logout">退出</a>
+    </div>
+  </div>
+</div>
+
+<div id="tabs">
+  <ul>
+    <li><a href="#tab1">tab1</a></li>
+    <li><a href="#tab2">tab2</a></li>
+    <li><a href="#tab3">tab3</a></li>
+  </ul>
+  <div id="tab1">tab1-content</div>
+  <div id="tab2">tab2-content</div>
+  <div id="tab3">tab3-content</div>
+</div>
+
+<form id="reg" action="123.html" title="会员注册">
+<ol class="reg_error"></ol>
+  <p><label for="user">帐号：</label><input type="text" name="user" class="text" id="user" title="请输入帐号，不少于2位！" /><span class="star">*</span></p>
+  <p><label for="pass">密码：</label><input type="password" name="pass" class="text" id="pass" title="请输入密码，不少于6位！"/><span class="star">*</span></p>
+  <p><label for="email">邮箱：</label><input type="text" name="email" class="text" id="email" title="请输入正确的邮箱！" /><span class="star">*</span></p>
+  <p><label>性别：</label><input type="radio" name="sex" value="male" id="male" /><label for="male">男</label></input><input type="radio" name="sex" value="fmale" id="fmale" /><label for="fmale">妖</label></input><input type="radio" name="sex" value="female" id="female" /><label for="female">女</label></input></p><!--代码不要乱换行，不然中间会出现空格-->
+  <p><label for="date">生日：</label><input type="text" name="birthday" class="text" id="date" readonly /></p>
+</form>
+<div id="loading">数据交互中~!</div>
+<form id="login" title="会员登录">
+  <ol class="login_error"></ol>
+  <p><label for="user">帐号：</label><input type="text" name="user" class="text" id="login_user" title="请输入帐号，不少于2位！" /><span class="star">*</span></p>
+  <p><label for="pass">密码：</label><input type="password" name="pass" class="text" id="login_pass" title="请输入密码，不少于6位！"/><span class="star">*</span></p>
+  <p><input type="checkbox" name="expires" id="expires" checked="checked" /><label for="checked">登录后有效期7天</label></p>
+</form>
+</body>
+</html>
